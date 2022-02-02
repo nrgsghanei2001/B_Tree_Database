@@ -1,5 +1,6 @@
 #include<iostream>
 #include<vector>
+#include<cmath>
 using namespace std;
 
 class BTNode;
@@ -33,7 +34,6 @@ class BTNode {
 
         BTNode* find_insert_place(int, BTNode*, int, BTNode*);
         void split_nodes(BTNode*, int);
-        void print_keys(BTNode*, int);
         void traverse(int);
 };
 /////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ BTNode* BTNode::find_insert_place(int data, BTNode* curr, int t, BTNode* root) {
             i--;
         }
         // data is bigger than cuurent key, pass untill getting the right place
-        while (key[i - 1]->data > data && i != 0) {
+        while (i != 0 && key[i - 1]->data > data) {
             key[i] = key[i - 1];
             i--;
         }
@@ -56,6 +56,7 @@ BTNode* BTNode::find_insert_place(int data, BTNode* curr, int t, BTNode* root) {
         new_key->nextField = NULL;
         new_key->self = curr;
         key[i] = new_key;     // put the key in the right place
+        num_keys++;
     }
     // case 2: we are not at leaf
     else {
@@ -87,7 +88,7 @@ BTNode* BTNode::find_insert_place(int data, BTNode* curr, int t, BTNode* root) {
     }
     return root;
 }
-///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 void BTNode::split_nodes(BTNode* curr, int t) {
     // create new node for right child
     BTNode* right = new BTNode(t);
@@ -95,7 +96,6 @@ void BTNode::split_nodes(BTNode* curr, int t) {
     int mid = (t - 1) / 2;  // index of median to put it up
     int number_of_keys = curr->num_keys;   // number of keys in full node
     Node* median = curr->key[mid];   // median of keys
-
     
     for (int i = mid + 1; i < number_of_keys; i++) {
         right->key[r_counter] = curr->key[i];        // put keys after median to right child
@@ -103,11 +103,12 @@ void BTNode::split_nodes(BTNode* curr, int t) {
         curr->num_keys--;      // number of keys decreases 
         right->num_keys++;     // number of keys of right child increases
     }
-
     // current node has childred
     int ch_counter = 0;
+    float val1=ceil(float(t)/2);
+    int walk_child=val1;
     if (!curr->is_leaf) {
-        for (int i = t / 2; i <= t; i++) {
+        for (int i = walk_child; i <= t; i++) {
             right->child[ch_counter] = curr->child[i];     // pass children of current node to new right child
             ch_counter++;
         }
@@ -118,40 +119,28 @@ void BTNode::split_nodes(BTNode* curr, int t) {
     int ri_counter = t - 1;
     // continue untill you get to current node
     while (child[ri_counter] != curr) {
+        child[ri_counter+1] = child[ri_counter];
         ri_counter--;
     }
     // put right child in the correct place
     child[ri_counter + 1] = right;
     // move the median up
     int mid_counter = t - 1;
-    while (key[mid_counter - 1] != NULL && mid_counter != 0) {
-        key[mid_counter] = key[mid_counter - 1];   // find the median location
+    while (mid_counter != 0 && !key[mid_counter - 1]) {
+        // move untill getting the median location
         mid_counter--;
     }
+
+    while(mid_counter != 0 && key[mid_counter - 1]->data > median->data) {
+        // change and replace untill getting the median location
+        key[mid_counter] = key[mid_counter - 1];
+        mid_counter--;
+    }
+
     key[mid_counter] = median;    // put the median in it's right place in parent node
     num_keys++;
     curr->num_keys--;       // one moved up so decrease it
     
-    
-}
-///////////////////////////////////////////////////////////
-void BTNode::print_keys(BTNode* node, int level) {
-    // case 1: there is nothong in our tree
-    if (level > 1 && is_leaf) {
-        cout << "empty!!!" << endl;
-    }
-    // case 2: we are in the level so print it
-    else if (level == 1) {
-        for (int i = 0; i < num_keys; i++) {
-            cout << key[i]->data << " ";
-        }
-    }
-    // case 3: go recursively to print all
-    else {
-        for (int i = 0; i < num_keys; i++) {
-            child[i]->print_keys(node, level - 1);
-        }
-    }
 }
 ///////////////////////////////////////////////////////////
 void BTNode::traverse(int tab) {
@@ -188,10 +177,8 @@ class BTree {
         Node* Search(int);
         Node* create_node(int, BTNode*);
         void Insert(int);
-        void Split(BTNode*);
         void Delete(int);
         void Update(int);
-        void Traverse_level_order(int);
         void traverse();
 
 };
@@ -226,46 +213,7 @@ void BTree::Insert(int data) {
     else {
         root = root->find_insert_place(data, root, t, root);
     }
-    
-    cout << "inserted"<<endl;
-
-}
-/////////////////////////////////////////////////////
-void BTree::Split(BTNode *y) {
-    // BTNode *z = new BTNode;
-    // z->is_leaf = y->is_leaf;
-    // // Copy the last (t-1) keys of y to z
-    // for (int j = 0; j < 4; j++)
-    //     z->key[j] = y->keys[j+t];
  
-    // // Copy the last t children of y to z
-    // if (!y->is_leaf) {
-    //     z->child.push_back(y->child[2])
-    //     for (int j = 0; j < t; j++)
-    //         z->C[j] = y->C[j+t];
-    // }
- 
-    // // Reduce the number of keys in y
-    // y->n = t - 1;
- 
-    // // Since this node is going to have a new child,
-    // // create space of new child
-    // for (int j = n; j >= i+1; j--)
-    //     C[j+1] = C[j];
- 
-    // // Link the new child to this node
-    // C[i+1] = z;
- 
-    // // A key of y will move to this node. Find the location of
-    // // new key and move all greater keys one space ahead
-    // for (int j = n-1; j >= i; j--)
-    //     keys[j+1] = keys[j];
- 
-    // // Copy the middle key of y to this node
-    // keys[i] = y->keys[t-1];
- 
-    // // Increment count of keys in this node
-    // n = n + 1;
 }
 ///////////////////////////////////////////////////////
 void BTree::Delete(int k) {
@@ -276,12 +224,8 @@ void BTree::Update(int k) {
     
 }
 /////////////////////////////////////////////////////
-void BTree::Traverse_level_order(int level) {
-    root->print_keys(root, level);
-}
-/////////////////////////////////////////////////////
 void BTree::traverse() {
-    root->child[0]->traverse(0);
+    root->traverse(0);
 }
 ///////////////////////////////////////////////////
 int main() {
@@ -293,6 +237,5 @@ int main() {
         cin >> w;
         tree.Insert(w);
     }
-    // tree.Traverse_level_order(2);
     tree.traverse();
 }
