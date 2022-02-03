@@ -27,6 +27,7 @@ class BTNode {
         void delete_node(int, int);
         Node* predecessor(int);
         Node* successor(int);
+        Node* search_node(int);
 };
 /////////////////////////////////////////////////////
 // constructor
@@ -177,7 +178,6 @@ void BTNode::delete_node(int k, int t) {
     while (key_counter < num_keys && key[key_counter]->data < k) {
         key_counter++;
     }
-    cout << num_keys<< " "<< key_counter <<endl;
     // key_counter is the next place we should go
     // case 1: k is exactly in this node
     if (key_counter < num_keys && key[key_counter]->data == k) {
@@ -254,7 +254,6 @@ void BTNode::delete_node(int k, int t) {
             if (key_counter == num_keys) {
                 last_child = 1;
             }
-            // cout << last_child<<endl;
             if (child[key_counter]->num_keys < t / 2) {
                 // case 2-2-1-1: borrow key from left brother
                 if (key_counter != 0 && child[key_counter - 1]->num_keys >= t / 2) {
@@ -400,6 +399,26 @@ Node* BTNode::successor(int key_counter) {
     
 }
 ///////////////////////////////////////////////////////
+Node* BTNode::search_node(int k) {
+    int key_counter = 0;
+    // do untill you get the place of accurance of node in it or in it's subtrees
+    while (key_counter < num_keys && key[key_counter]->data < k) {
+        key_counter++;
+    }
+    // case 1: the node contains key
+    if (key_counter < num_keys && key[key_counter]->data == k) {
+        return key[key_counter];
+    }
+    // case 2: the key is not in this node and node does not have any children, so its not found
+    else if (is_leaf) {
+        return NULL;
+    }
+    // case 3: it may be in subtrees, so search recursively for it
+    else {
+        return child[key_counter]->search_node(k);
+    }
+}
+///////////////////////////////////////////////////////
 // Class B tree with all operations on tree
 class BTree {
     private:
@@ -423,7 +442,7 @@ BTree::BTree(int dgr) {
 }
 /////////////////////////////////////////////////////
 Node* BTree::Search(int k) {
-    
+    return root->search_node(k);
 }
 /////////////////////////////////////////////////////
 Node* BTree::create_node(int data, BTNode *node) {
@@ -475,22 +494,40 @@ void BTree::traverse() {
 ///////////////////////////////////////////////////
 int main() {
     int t = 5;
-    int ins, del;
-    cin >> ins >> del;
     BTree tree(t);
-    for (int i = 0; i < ins; i++) {
-        int w;
-        cin >> w;
-        tree.Insert(w);
-        tree.traverse();
-        cout<<endl<<endl;
+    int choice = 1;
+    while (choice != 4) {
+        cin >> choice;
+        if (choice == 1) {       // insert
+            int num;
+            cin >> num;
+            tree.Insert(num);
+            cout << "---------------"<<endl;
+            tree.traverse();
+            cout << "---------------" << endl;
+        }
+        else if (choice == 2) {      // delete
+            int num;
+            cin >> num;
+            tree.Delete(num);
+            cout << "---------------"<<endl;
+            tree.traverse();
+            cout << "---------------" << endl; 
+        }
+        else if (choice == 3) {      // search
+            int num;
+            cin >> num;
+            Node* res = tree.Search(num);
+            cout << "---------------"<<endl;
+            if (res) {
+                cout << "OK" << endl;
+            }
+            else {
+                cout << "Not found" << endl;
+            }
+            cout << "---------------" << endl; 
+        }
     }
-    tree.traverse();
-    for (int i = 0; i < del; i++) {
-        int w;
-        cin >> w;
-        tree.Delete(w);
-        tree.traverse();
-        cout<<endl<<endl;
-    }
+     
+    return 0;
 }
