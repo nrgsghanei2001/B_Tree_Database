@@ -177,9 +177,10 @@ void BTNode::delete_node(int k, int t) {
     while (key_counter < num_keys && key[key_counter]->data < k) {
         key_counter++;
     }
+    cout << num_keys<< " "<< key_counter <<endl;
     // key_counter is the next place we should go
     // case 1: k is exactly in this node
-    if (key[key_counter]->data == k && key_counter < num_keys) {
+    if (key_counter < num_keys && key[key_counter]->data == k) {
         // case 1-1: delete from leaf
         if (is_leaf) {
             // just move next keys one step backward
@@ -214,7 +215,7 @@ void BTNode::delete_node(int k, int t) {
                 // put the key in rchild
                 lchild->key[(t / 2) - 1] = key[key_counter];
                 // move right child keys and children to left child 
-                for (int i = 0; i < lchild->num_keys; i++) {
+                for (int i = 0; i < rchild->num_keys; i++) {
                     lchild->key[i + (t / 2)] = rchild->key[i];
                     // if it has any children pass them to left child
                     if (lchild->is_leaf == false) {
@@ -234,7 +235,7 @@ void BTNode::delete_node(int k, int t) {
                 // free the memory of right child after merging
                 delete(rchild);
                 // recursively remove the key that is in child now
-                child[key_counter]->delete_node(key_counter, t);
+                child[key_counter]->delete_node(k, t);
             }
         }
     }
@@ -253,6 +254,7 @@ void BTNode::delete_node(int k, int t) {
             if (key_counter == num_keys) {
                 last_child = 1;
             }
+            // cout << last_child<<endl;
             if (child[key_counter]->num_keys < t / 2) {
                 // case 2-2-1-1: borrow key from left brother
                 if (key_counter != 0 && child[key_counter - 1]->num_keys >= t / 2) {
@@ -264,7 +266,7 @@ void BTNode::delete_node(int k, int t) {
                         rrchild->key[i + 1] = rrchild->key[i];
                         // it has children
                         if (rrchild->is_leaf == false) {
-                            rrchild->child[i + 1] = rrchild->child[i];
+                            rrchild->child[i + 2] = rrchild->child[i + 1];
                         }
                     }
                     // pass the children
@@ -417,7 +419,7 @@ class BTree {
 //////////////////////////////////////////////////////
 BTree::BTree(int dgr) {
     root = NULL;
-    t = dgr;
+    t = dgr + 1;
 }
 /////////////////////////////////////////////////////
 Node* BTree::Search(int k) {
@@ -472,7 +474,7 @@ void BTree::traverse() {
 }
 ///////////////////////////////////////////////////
 int main() {
-    int t = 3;
+    int t = 5;
     int ins, del;
     cin >> ins >> del;
     BTree tree(t);
@@ -480,6 +482,8 @@ int main() {
         int w;
         cin >> w;
         tree.Insert(w);
+        tree.traverse();
+        cout<<endl<<endl;
     }
     tree.traverse();
     for (int i = 0; i < del; i++) {
@@ -487,5 +491,6 @@ int main() {
         cin >> w;
         tree.Delete(w);
         tree.traverse();
+        cout<<endl<<endl;
     }
 }
