@@ -7,7 +7,7 @@ class BTNode;
 // Class Node for each elements inside elements of B-tree
 class Node {
     public:
-        int data;
+        long long int data;
         Node* nextField;
         BTNode* self;
 };
@@ -18,36 +18,36 @@ class BTNode {
         Node** key;
         BTNode** child;
         bool is_leaf;
-        int num_keys;
+        long long int num_keys;
 
-        BTNode(int);
-        BTNode* find_insert_place(int, BTNode*, int, BTNode*);
-        void split_nodes(BTNode*, int);
-        void traverse(int);
-        void delete_node(int, int);
-        Node* predecessor(int);
-        Node* successor(int);
-        Node* search_node(int);
+        BTNode(long long int);
+        BTNode* find_insert_place(long long int, BTNode*, long long int, BTNode*);
+        void split_nodes(BTNode*, long long int);
+        void traverse(long long int);
+        void delete_node(long long int, long long int);
+        Node* predecessor(long long int);
+        Node* successor(long long int);
+        Node* search_node(long long int);
 };
 /////////////////////////////////////////////////////
 // constructor
-BTNode::BTNode(int m) {
+BTNode::BTNode(long long int m) {
     key = new Node*[m];
     is_leaf = true;
     num_keys = 0;
     child = new BTNode*[m + 1];
-    for (int i = 0; i < m; i++) {
+    for (long long int i = 0; i < m; i++) {
         key[i] = NULL;
     }
-    for (int i = 0; i < m + 1; i++) {
+    for (long long int i = 0; i < m + 1; i++) {
         child[i] = NULL;
     }
 }
 /////////////////////////////////////////////////////
-BTNode* BTNode::find_insert_place(int data, BTNode* curr, int t, BTNode* root) {
+BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long int t, BTNode* root) {
     // case 1: we are at leaf node
     if (is_leaf) {
-        int i = t;
+        long long int i = t;
         // find the first null place in keys
         while (key[i - 1] == NULL) {
             i--;
@@ -67,7 +67,7 @@ BTNode* BTNode::find_insert_place(int data, BTNode* curr, int t, BTNode* root) {
     }
     // case 2: we are not at leaf
     else {
-        int i = 0;
+        long long int i = 0;
         // find the right child to insert to or get out if node is full
         while (i < num_keys && key[i]->data < data) {
             i++;
@@ -96,24 +96,24 @@ BTNode* BTNode::find_insert_place(int data, BTNode* curr, int t, BTNode* root) {
     return root;
 }
 ///////////////////////////////////////////////////////////////////////
-void BTNode::split_nodes(BTNode* curr, int t) {
+void BTNode::split_nodes(BTNode* curr, long long int t) {
     // create new node for right child
     BTNode* right = new BTNode(t);
-    int r_counter = 0;
-    int mid = (t - 1) / 2;  // index of median to put it up
-    int number_of_keys = curr->num_keys;   // number of keys in full node
+    long long int r_counter = 0;
+    long long int mid = (t - 1) / 2;  // index of median to put it up
+    long long int number_of_keys = curr->num_keys;   // number of keys in full node
     Node* median = curr->key[mid];   // median of keys
     
-    for (int i = mid + 1; i < number_of_keys; i++) {
+    for (long long int i = mid + 1; i < number_of_keys; i++) {
         right->key[r_counter] = curr->key[i];        // put keys after median to right child
         r_counter++;
         curr->num_keys--;      // number of keys decreases 
         right->num_keys++;     // number of keys of right child increases
     }
     // current node has childred
-    int ch_counter = 0;
+    long long int ch_counter = 0;
     if (!curr->is_leaf) {
-        for (int i = ceil(float(t) / 2); i <= t; i++) {
+        for (long long int i = ceil(float(t) / 2); i <= t; i++) {
             right->child[ch_counter] = curr->child[i];     // pass children of current node to new right child
             ch_counter++;
         }
@@ -121,7 +121,7 @@ void BTNode::split_nodes(BTNode* curr, int t) {
     }
     // do this for owning chidren and non owning chidren nodes
     // allocate place for right children
-    int ri_counter = t - 1;
+    long long int ri_counter = t - 1;
     // continue untill you get to current node
     while (child[ri_counter] != curr) {
         child[ri_counter+1] = child[ri_counter];
@@ -130,7 +130,7 @@ void BTNode::split_nodes(BTNode* curr, int t) {
     // put right child in the correct place
     child[ri_counter + 1] = right;
     // move the median up
-    int mid_counter = t - 1;
+    long long int mid_counter = t - 1;
     while (mid_counter != 0 && !key[mid_counter - 1]) {
         // move untill getting the median location
         mid_counter--;
@@ -148,12 +148,12 @@ void BTNode::split_nodes(BTNode* curr, int t) {
     
 }
 ///////////////////////////////////////////////////////////
-void BTNode::traverse(int tab) {
-    int i;
+void BTNode::traverse(long long int tab) {
+    long long int i;
     string s;
  
     // Print 'tab' number of tabs
-    for (int j = 0; j < tab; j++) {
+    for (long long int j = 0; j < tab; j++) {
         s += '\t';
     }
     for (i = 0; i < num_keys; i++) {
@@ -171,9 +171,9 @@ void BTNode::traverse(int tab) {
     }
 }
 /////////////////////////////////////////////////
-void BTNode::delete_node(int k, int t) {
+void BTNode::delete_node(long long int k, long long int t) {
     // find the parent node place or exact place of accurance
-    int key_counter = 0;
+    long long int key_counter = 0;
     // do untill getting the key that is greater than k
     while (key_counter < num_keys && key[key_counter]->data < k) {
         key_counter++;
@@ -184,7 +184,7 @@ void BTNode::delete_node(int k, int t) {
         // case 1-1: delete from leaf
         if (is_leaf) {
             // just move next keys one step backward
-            for (int i = key_counter + 1; i < num_keys; i++) {
+            for (long long int i = key_counter + 1; i < num_keys; i++) {
                 key[i - 1] = key[i];
             }
             // reduce the number of keys by 1
@@ -215,7 +215,7 @@ void BTNode::delete_node(int k, int t) {
                 // put the key in rchild
                 lchild->key[(t / 2) - 1] = key[key_counter];
                 // move right child keys and children to left child 
-                for (int i = 0; i < rchild->num_keys; i++) {
+                for (long long int i = 0; i < rchild->num_keys; i++) {
                     lchild->key[i + (t / 2)] = rchild->key[i];
                     // if it has any children pass them to left child
                     if (lchild->is_leaf == false) {
@@ -223,7 +223,7 @@ void BTNode::delete_node(int k, int t) {
                     }
                 }
                 // move keys 1 step and children 2 step backward
-                for (int i = key_counter + 1; i < num_keys; i++) {
+                for (long long int i = key_counter + 1; i < num_keys; i++) {
                     key[i - 1] = key[i];
                     child[i] = child[i + 1];
                 }
@@ -250,7 +250,7 @@ void BTNode::delete_node(int k, int t) {
         else {
             // case 2-2-1: key is in last keys child and the child has more than allowed keys
             // check if it is the last child
-            int last_child = 0;
+            long long int last_child = 0;
             if (key_counter == num_keys) {
                 last_child = 1;
             }
@@ -261,7 +261,7 @@ void BTNode::delete_node(int k, int t) {
                     BTNode* llchild = child[key_counter - 1];
                     
                     // move children and children of it forward
-                    for (int i = rrchild->num_keys - 1; i >= 0; i--) {
+                    for (long long int i = rrchild->num_keys - 1; i >= 0; i--) {
                         rrchild->key[i + 1] = rrchild->key[i];
                         // it has children
                         if (rrchild->is_leaf == false) {
@@ -294,12 +294,12 @@ void BTNode::delete_node(int k, int t) {
                     // pass the key
                     key[key_counter] = rrchild->key[0];
                     // move keys and children of right child backward
-                    for (int i = 1; i < rrchild->num_keys; i++) {
+                    for (long long int i = 1; i < rrchild->num_keys; i++) {
                         rrchild->key[i - 1] = rrchild->key[i];
                     }
                     // if it has any children
                     if (rrchild->is_leaf == false) {
-                        for (int i = 0; i < rrchild->num_keys; i++) {
+                        for (long long int i = 0; i < rrchild->num_keys; i++) {
                             rrchild->child[i] = rrchild->child[i + 1];
                         }
                     }
@@ -315,7 +315,7 @@ void BTNode::delete_node(int k, int t) {
                     // put the key in rchild
                     lchild->key[(t / 2) - 1] = key[key_counter];
                     // move right child keys and children to left child 
-                    for (int i = 0; i < lchild->num_keys; i++) {
+                    for (long long int i = 0; i < lchild->num_keys; i++) {
                         lchild->key[i + (t / 2)] = rchild->key[i];
                         // if it has any children pass them to left child
                         if (lchild->is_leaf == false) {
@@ -323,7 +323,7 @@ void BTNode::delete_node(int k, int t) {
                         }
                     }
                     // move keys 1 step and children 2 step backward
-                    for (int i = key_counter + 1; i < num_keys; i++) {
+                    for (long long int i = key_counter + 1; i < num_keys; i++) {
                         key[i - 1] = key[i];
                         child[i] = child[i + 1];
                     }
@@ -342,7 +342,7 @@ void BTNode::delete_node(int k, int t) {
                     // put the key in rchild
                     lchild->key[(t / 2) - 1] = key[key_counter - 1];
                     // move right child keys and children to left child 
-                    for (int i = 0; i < lchild->num_keys; i++) {
+                    for (long long int i = 0; i < lchild->num_keys; i++) {
                         lchild->key[i + (t / 2)] = rchild->key[i];
                         // if it has any children pass them to left child
                         if (lchild->is_leaf == false) {
@@ -350,7 +350,7 @@ void BTNode::delete_node(int k, int t) {
                         }
                     }
                     // move keys 1 step and children 2 step backward
-                    for (int i = key_counter; i < num_keys; i++) {
+                    for (long long int i = key_counter; i < num_keys; i++) {
                         key[i - 1] = key[i];
                         child[i] = child[i + 1];
                     }
@@ -377,7 +377,7 @@ void BTNode::delete_node(int k, int t) {
     return;
 }
 ////////////////////////////////////////////////
-Node* BTNode::predecessor(int key_counter) {
+Node* BTNode::predecessor(long long int key_counter) {
     BTNode* node = child[key_counter];
     // get the right most node
     while (node->is_leaf == false) {
@@ -388,7 +388,7 @@ Node* BTNode::predecessor(int key_counter) {
     
 }
 /////////////////////////////////////////////////////
-Node* BTNode::successor(int key_counter) {
+Node* BTNode::successor(long long int key_counter) {
     BTNode* node = child[key_counter + 1];
     // get the left most node
     while (node->is_leaf == false) {
@@ -399,8 +399,8 @@ Node* BTNode::successor(int key_counter) {
     
 }
 ///////////////////////////////////////////////////////
-Node* BTNode::search_node(int k) {
-    int key_counter = 0;
+Node* BTNode::search_node(long long int k) {
+    long long int key_counter = 0;
     // do untill you get the place of accurance of node in it or in it's subtrees
     while (key_counter < num_keys && key[key_counter]->data < k) {
         key_counter++;

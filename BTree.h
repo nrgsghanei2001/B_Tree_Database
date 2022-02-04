@@ -9,29 +9,29 @@ using namespace std;
 class BTree {
     private:
         BTNode* root;
-        int t;
+        long long int t;
 
     public:
-        BTree(int);
-        Node* Search(int);
-        Node* create_node(int, BTNode*);
-        void Insert(int);
-        void Delete(int);
-        void Update(int);
+        BTree(long long int);
+        Node* Search(long long int);
+        Node* create_node(long long int, BTNode*);
+        void Insert(long long int);
+        void Delete(long long int);
+        void Update(long long int);
         void traverse();
 
 };
 //////////////////////////////////////////////////////
-BTree::BTree(int dgr) {
+BTree::BTree(long long int dgr) {
     root = NULL;
     t = dgr + 1;
 }
 /////////////////////////////////////////////////////
-Node* BTree::Search(int k) {
+Node* BTree::Search(long long int k) {
     return root->search_node(k);
 }
 /////////////////////////////////////////////////////
-Node* BTree::create_node(int data, BTNode *node) {
+Node* BTree::create_node(long long int data, BTNode *node) {
     Node* key = new Node;        // create element of root node
     key->data = data;               // initialize element of root node
     key->nextField = NULL;
@@ -40,7 +40,7 @@ Node* BTree::create_node(int data, BTNode *node) {
     return key;
 }
 /////////////////////////////////////////////////////////
-void BTree::Insert(int data) {
+void BTree::Insert(long long int data) {
     // case 1: the tree is empty
     if (!root) {                          
         root = new BTNode(t);                // create root node
@@ -55,7 +55,7 @@ void BTree::Insert(int data) {
  
 }
 ///////////////////////////////////////////////////////
-void BTree::Delete(int k) {
+void BTree::Delete(long long int k) {
     // case 1: the tree is empty
     if (root == NULL) {
         cout << "There is nothing to delete.";
@@ -70,7 +70,7 @@ void BTree::Delete(int k) {
     
 }
 /////////////////////////////////////////////////////
-void BTree::Update(int k) {
+void BTree::Update(long long int k) {
     
 }
 /////////////////////////////////////////////////////
