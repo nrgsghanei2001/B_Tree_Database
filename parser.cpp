@@ -2,10 +2,41 @@
 #include<bits/stdc++.h>
 #include<vector>
 #include<string>
+#include<typeinfo>
 #include"BTree.h"
 using namespace std;
 
+long long int hash_string(string s) {
+    long long int h = 0;
+    for (int i = 0; i < s.length(); i++) {
+        h += int(s[i]) * (i + 1);
+    }
+    return h;
+}
+//////////////////////////////////////////////////////
+long long int hash_date(string date) {
+    long long int h = 0;
+    int first = 0, second = 0;
+    for (int i = 0; i < date.length(); i++) {
+        if (date[i] == '/' && !first) {
+            first = i;
+        }
+        else if (date[i] == '/' && !second) {
+            second = i;
+        }
+    }
+    string year = date.substr(0, 4);
+    string month = date.substr(first + 1, second - first - 1);
+    string day = date.substr(second + 1);
+    h += stoi(year);
+    h *= 100;
+    h += stoi(month);
+    h *= 100;
+    h += stoi(day);
 
+    return h;
+}
+/////////////////////////////////////////////////////
 class Query {
     private:
         vector<string> tokens;
@@ -15,6 +46,14 @@ class Query {
 };
 //////////////////////////////////////////////////////////
 void Query::parse_query(string input) {
+    string inputed = "";
+    // delete "" from strings
+    for (int i = 0; i < input.length(); i++) {
+        if (int(input[i]) != 34) {
+            inputed += input[i];
+        }
+    }
+    input = inputed;
     string word = "";
  
     // move on query line
@@ -65,6 +104,8 @@ class Table {
         int table_id;
         vector<vector<string>> fields;
         vector<BTree*> columns;
+        bool* id_table;
+
     public:
         Table(string);
         string get_name();
@@ -72,12 +113,21 @@ class Table {
         void show_fields();
         void set_id(int);
         int get_id();
+        void insert(vector<string>);
+        long long int find_id_to_insert();
+        void show_columns_info();
 };
 ////////////////////////////////////////////////////////
 Table::Table(string name) {
     table_name = name;
     fields.push_back({});
     fields.push_back({});
+
+    // create a table for ids to find the first non-used id
+    id_table = new bool[1000000];
+    for (long long int i = 0; i < 1000000; i++) {
+        id_table[i] = true;
+    }
 }
 ////////////////////////////////////////////////////////
 string Table::get_name() {
@@ -107,37 +157,71 @@ int Table::get_id() {
     return table_id;
 }
 //////////////////////////////////////////////////////
-long long int hash_string(string s) {
-    long long int h = 0;
-    for (int i = 0; i < s.length(); i++) {
-        h += int(s[i]) * (i + 1);
+void Table::insert(vector<string> tokens) {
+    int num_fields = tokens.size() - 4;
+    // number of fileds is not correct
+    if (num_fields != columns.size() - 1) {
+        cout << "Blank field is not allowed, Please try again.";
+        return;
     }
-    return h;
-}
-//////////////////////////////////////////////////////
-long long int hash_date(string date) {
-    long long int h = 0;
-    int first = 0, second = 0;
-    for (int i = 0; i < date.length(); i++) {
-        if (date[i] == '/' && !first) {
-            first = i;
+    else {
+        vector<Node*> inserted_list;
+        long long int id = find_id_to_insert();
+        columns[0]->Insert(id);
+        id_table[id] = false;
+        inserted_list.push_back(columns[0]->Search(id));
+        long long int h;
+        
+        for (int i = 4; i < tokens.size(); i++) {
+            string type_of = fields[1][i - 3];
+            // convert to right type
+            if (type_of == "string") {
+                h = hash_string(tokens[i]);
+            }
+            else if (type_of == "timestamp") {
+                h = hash_date(tokens[i]);
+            }
+            else {
+                h = stoll(tokens[i]);
+            }
+            columns[i - 3]->Insert(h);
+            inserted_list.push_back(columns[i - 3]->Search(h));
         }
-        else if (date[i] == '/' && !second) {
-            second = i;
-        }
-    }
-    string year = date.substr(0, 4);
-    string month = date.substr(first + 1, second - first - 1);
-    string day = date.substr(second + 1);
-    h += stoi(year);
-    h *= 100;
-    h += stoi(month);
-    h *= 100;
-    h += stoi(day);
 
-    return h;
+        // fix next_fields of nodes
+        for (int i = 0; i < inserted_list.size() - 1; i++) {
+            inserted_list[i]->nextField = inserted_list[i + 1];
+        }
+        inserted_list[inserted_list.size() - 1]->nextField = inserted_list[0];
+
+        // Node* node = columns[0]->Search(inserted_list[0]->data);
+        // for (int i = 0; i < inserted_list.size(); i++) {
+        //     cout << node->nextField->data << " ";
+        //     node = node->nextField;
+        // }
+    }
+    
 }
 /////////////////////////////////////////////////////
+long long int Table::find_id_to_insert() {
+    long long int id;
+    for (long long int i = 0; i < 1000000; i++) {
+        if (id_table[i]) {
+            id = i;
+            break;
+        }
+    }
+    return id;
+}
+//////////////////////////////////////////////////////
+void Table::show_columns_info() {
+    for (int i = 0; i < columns.size(); i++) {
+        cout << fields[0][i] << endl;
+        columns[i]->traverse();
+        cout << endl<<"----------------"<<endl;
+    }
+}
+//////////////////////////////////////////////////////
 int main() {
     string input;
     int n;
@@ -160,7 +244,9 @@ int main() {
                 Table* table_obj = all_tables[all_tables.size() - 1];
                 table_obj->set_id(all_tables.size());
 
-                // add fields of table to it
+                // each table should contain column id
+                table_obj->create_filed("id", "int");
+                // add other fields of table to it
                 for (int i = 3; i < tokens.size(); i+=2) {
                     table_obj->create_filed(tokens[i], tokens[i + 1]);
                 }
@@ -170,6 +256,22 @@ int main() {
             string into = tokens[1];    // second token should be INTO
             if (into == "INTO") {
                 string table_name = tokens[2];         // third token should be name of table we wanna insert to
+                // find the table object
+                Table* table_obj = NULL;
+                for (int i = 0; i < all_tables.size(); i++) {
+                    if (all_tables[i]->get_name() == table_name) {
+                        table_obj = all_tables[i];
+                        break;
+                    }
+                }
+                // the table not exists
+                if (!table_obj) {
+                    cout << "Sorry! there is not such a table, Please try again." << endl;
+                }
+                // table found
+                else {
+                    table_obj->insert(tokens);
+                }
             }
         }
         else if (operation == "DELETE") {
@@ -190,6 +292,7 @@ int main() {
         cout << all_tables[i]->get_name() << endl;
         cout << all_tables[i]->get_id() << endl;
         all_tables[i]->show_fields();
+        all_tables[i]->show_columns_info();
     }
 
     return 0;
