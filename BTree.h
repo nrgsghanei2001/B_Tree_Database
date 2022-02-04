@@ -19,6 +19,8 @@ class BTree {
         void Delete(long long int);
         void Update(long long int);
         void traverse();
+        Node* search_for_greaters(long long int);
+        Node* search_for_smaller(long long int k);
 
 };
 //////////////////////////////////////////////////////
@@ -76,5 +78,15 @@ void BTree::Update(long long int k) {
 /////////////////////////////////////////////////////
 void BTree::traverse() {
     root->traverse(0);
+}
+//////////////////////////////////////////////////////
+Node* BTree::search_for_greaters(long long int k) {
+
+    return root->find_greaters(k);
+}
+//////////////////////////////////////////////////////
+Node* BTree::search_for_smaller(long long int k) {
+
+    return root->find_smallers(k);
 }
 //////////////////////////////////////////////////////

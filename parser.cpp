@@ -116,6 +116,7 @@ class Table {
         void insert(vector<string>);
         long long int find_id_to_insert();
         void show_columns_info();
+        void deletion(vector<string>);
 };
 ////////////////////////////////////////////////////////
 Table::Table(string name) {
@@ -222,6 +223,161 @@ void Table::show_columns_info() {
     }
 }
 //////////////////////////////////////////////////////
+void Table::deletion(vector<string> tokens) {
+    string condition = tokens[4], fields_name, operation, state;
+    int pos = -1;
+    pos = condition.find("==");
+    if (pos != -1) {     // condition is ==
+        fields_name = condition.substr(0, pos);
+        operation = condition.substr(pos, 2);
+        state = condition.substr(pos + 2);
+    }
+    else {
+        pos = condition.find(">");
+        if (pos != -1) {      // condition is >
+            fields_name = condition.substr(0, pos);
+            operation = condition.substr(pos, 1);
+            state = condition.substr(pos + 1);
+        }
+        else {
+            pos = condition.find("<");       // condition is <
+            if (pos != -1) {
+                fields_name = condition.substr(0, pos);
+                operation = condition.substr(pos, 1);
+                state = condition.substr(pos + 1);
+            }
+            else {                // condition is undefined, so break up
+                cout << "Invalid condition! Please Try again." << endl;
+                return;
+            }
+        }
+    }
+    // find the column that we want to get query on it
+    int col = -1;
+    for (int i = 0; i < fields[0].size(); i++) {
+        if (fields[0][i] == fields_name) {
+            col = i;
+            break;
+        }
+    }
+    // column found
+    if (col != -1) {
+        long long int h;
+        // hash the statement base on type of column
+        if (fields[1][col] == "string") {
+            h = hash_string(state);
+        }
+        else if (fields[1][col] == "timestamp") {
+            h = hash_date(state);
+        }
+        else if (fields[1][col] == "int") {
+            h = stoll(state);
+        }
+        // do conditions
+        if (operation == "==") {
+            while (true) {
+                Node* node = columns[col % columns.size()]->Search(h);
+                Node* del_node = columns[col % columns.size()]->Search(h);
+                // data found
+                if (node) {
+                    cout << node->data << "--" <<endl;
+                    vector<Node*> all_nodes;
+                    
+                    for (int i = 0; i < columns.size(); i++) {
+                        all_nodes.push_back(node);
+                        node = node->nextField;
+                    }
+
+                    for (int i = 0; i < all_nodes.size(); i++) {
+                        BTree* bt = columns[col % columns.size()];
+                        // open the id that is deleted
+                        if (fields[0][col % columns.size()] == "id") {
+                            id_table[all_nodes[i]->data] = true;
+                        }
+                        bt->Delete(all_nodes[i]->data);
+                        bt->traverse();
+                        col++;
+                    }
+                }
+                // data not found
+                else {
+                    break;
+                }
+            }
+        }
+        else if (operation == ">") {
+            while (true) {
+                cout <<"col: "<<col<<endl;
+                Node* node = columns[col % columns.size()]->search_for_greaters(h);
+                Node* del_node = columns[col % columns.size()]->search_for_greaters(h);
+                // data found
+                if (node) {
+                    cout << node->data << "--" <<endl;
+                    vector<Node*> all_nodes;
+                    
+                    for (int i = 0; i < columns.size(); i++) {
+                        all_nodes.push_back(node);
+                        node = node->nextField;
+                    }
+
+                    for (int i = 0; i < all_nodes.size(); i++) {
+                        BTree* bt = columns[col % columns.size()];
+                        // open the id that is deleted
+                        if (fields[0][col % columns.size()] == "id") {
+                            id_table[all_nodes[i]->data] = true;
+                        }
+                        bt->Delete(all_nodes[i]->data);
+                        bt->traverse();
+                        col++;
+                    }
+                }
+                // data not found
+                else {
+                    break;
+                }
+            }
+        }
+        else if (operation == "<") {
+            while (true) {
+                cout <<"col: "<<col<<endl;
+                Node* node = columns[col % columns.size()]->search_for_smaller(h);
+                Node* del_node = columns[col % columns.size()]->search_for_smaller(h);
+                // data found
+                if (node) {
+                    cout << node->data << "--" <<endl;
+                    vector<Node*> all_nodes;
+                    
+                    for (int i = 0; i < columns.size(); i++) {
+                        all_nodes.push_back(node);
+                        node = node->nextField;
+                    }
+
+                    for (int i = 0; i < all_nodes.size(); i++) {
+                        BTree* bt = columns[col % columns.size()];
+                        // open the id that is deleted
+                        if (fields[0][col % columns.size()] == "id") {
+                            id_table[all_nodes[i]->data] = true;
+                        }
+                        bt->Delete(all_nodes[i]->data);
+                        bt->traverse();
+                        col++;
+                    }
+                }
+                // data not found
+                else {
+                    break;
+                }
+            }
+        }
+    }
+    // column not found
+    else {
+        cout << "There is not such a column in this table, please try again." << endl;
+        return;
+    }
+
+}
+//////////////////////////////////////////////////////
 int main() {
     string input;
     int n;
@@ -278,7 +434,25 @@ int main() {
             string from = tokens[1];    // second token should be FROM
             if (from == "FROM") {
                 string table_name = tokens[2];         // third token should be name of table we wanna delete from
+                // find the table object
+                Table* table_obj = NULL;
+                for (int i = 0; i < all_tables.size(); i++) {
+                    if (all_tables[i]->get_name() == table_name) {
+                        table_obj = all_tables[i];
+                        break;
+                    }
+                }
+                // the table not exists
+                if (!table_obj) {
+                    cout << "Sorry! there is not such a table, Please try again." << endl;
+                }
+                // table found
+                else {
+                    table_obj->deletion(tokens);
+                }
+
             }
+            
         }
         else if (operation == "SELECT") {
 

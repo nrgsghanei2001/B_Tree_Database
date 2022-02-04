@@ -28,6 +28,8 @@ class BTNode {
         Node* predecessor(long long int);
         Node* successor(long long int);
         Node* search_node(long long int);
+        Node* find_greaters(long long int);
+        Node* find_smallers(long long int);
 };
 /////////////////////////////////////////////////////
 // constructor
@@ -419,3 +421,43 @@ Node* BTNode::search_node(long long int k) {
     }
 }
 ///////////////////////////////////////////////////////
+Node* BTNode::find_greaters(long long int k) {
+    long long int key_counter = 0;
+    // do untill you get the place of accurance of node in it or in it's subtrees
+    while (key_counter < num_keys && key[key_counter]->data <= k) {
+        key_counter++;
+    }
+    // case 1: the node contains key greater then k
+    if (key_counter < num_keys && key[key_counter]->data > k) {
+        return key[key_counter];
+    }
+    // case 2: the key is not in this node and node does not have any children, so its not found
+    else if (is_leaf) {
+        return NULL;
+    }
+    // case 3: it may be in subtrees, so search recursively for it
+    else {
+        return child[key_counter]->search_node(k);
+    }
+}
+///////////////////////////////////////////////////////////
+Node* BTNode::find_smallers(long long int k) {
+    long long int key_counter = num_keys - 1;
+    // do untill you get the place of accurance of node in it or in it's subtrees
+    while (key_counter >= 0 && key[key_counter]->data >= k) {
+        key_counter--;
+    }
+    // case 1: the node contains key smaller than k
+    if (key_counter >= 0 && key[key_counter]->data < k) {
+        return key[key_counter];
+    }
+    // case 2: the key is not in this node and node does not have any children, so its not found
+    else if (is_leaf) {
+        return NULL;
+    }
+    // case 3: it may be in subtrees, so search recursively for it
+    else {
+        return child[key_counter]->search_node(k);
+    }
+}
+///////////////////////////////////////////////////////////
