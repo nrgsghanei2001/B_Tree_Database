@@ -15,12 +15,14 @@ class BTree {
         BTree(long long int);
         Node* Search(long long int);
         Node* create_node(long long int, BTNode*);
-        void Insert(long long int);
+        Node* Insert(long long int);
         void Delete(long long int);
+        void Delete2(Node*);
         void Update(long long int);
         void traverse();
         Node* search_for_greaters(long long int);
         Node* search_for_smaller(long long int k);
+        BTNode* get_root();
 
 };
 //////////////////////////////////////////////////////
@@ -42,19 +44,22 @@ Node* BTree::create_node(long long int data, BTNode *node) {
     return key;
 }
 /////////////////////////////////////////////////////////
-void BTree::Insert(long long int data) {
+Node* BTree::Insert(long long int data) {
+    Node* new_key = new Node;
     // case 1: the tree is empty
     if (!root) {                          
         root = new BTNode(t);                // create root node
         Node* key = create_node(data, root);
         root->key[0] = key;    // add node to root node
         root->num_keys++;
+        return root->key[0];
     }
     // case 2: the root is not empty
     else {
-        root = root->find_insert_place(data, root, t, root);
+        root = root->find_insert_place(data, root, t, root, new_key);
+        return new_key;
     }
- 
+    
 }
 ///////////////////////////////////////////////////////
 void BTree::Delete(long long int k) {
@@ -67,9 +72,20 @@ void BTree::Delete(long long int k) {
     else {
         // go deletiong from root
         root->delete_node(k, t);
+    } 
+}
+/////////////////////////////////////////////////////
+void BTree::Delete2(Node* k) {
+    // case 1: the tree is empty
+    if (root == NULL) {
+        cout << "There is nothing to delete.";
+        return;
     }
-    
-    
+    // case 2: non-empty tree
+    else {
+        // go deletiong from root
+        root->delete_node2(k, t);
+    }  
 }
 /////////////////////////////////////////////////////
 void BTree::Update(long long int k) {
@@ -89,4 +105,8 @@ Node* BTree::search_for_smaller(long long int k) {
 
     return root->find_smallers(k);
 }
+//////////////////////////////////////////////////////
+BTNode* BTree::get_root() {
+    return root;
+} 
 //////////////////////////////////////////////////////

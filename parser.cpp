@@ -117,6 +117,10 @@ class Table {
         long long int find_id_to_insert();
         void show_columns_info();
         void deletion(vector<string>);
+        void update(vector<string>);
+        void check_for_equal(BTNode*, long long int, vector<Node*>&);
+        void check_for_greater(BTNode*, long long int, vector<Node*>&);
+        void check_for_smaller(BTNode*, long long int, vector<Node*>&);
 };
 ////////////////////////////////////////////////////////
 Table::Table(string name) {
@@ -168,9 +172,11 @@ void Table::insert(vector<string> tokens) {
     else {
         vector<Node*> inserted_list;
         long long int id = find_id_to_insert();
-        columns[0]->Insert(id);
+        Node* insertt = columns[0]->Insert(id);
+        // cout << insertt->data << " *** ";
         id_table[id] = false;
-        inserted_list.push_back(columns[0]->Search(id));
+        // inserted_list.push_back(columns[0]->Search(id));
+        inserted_list.push_back(insertt);
         long long int h;
         
         for (int i = 4; i < tokens.size(); i++) {
@@ -185,8 +191,10 @@ void Table::insert(vector<string> tokens) {
             else {
                 h = stoll(tokens[i]);
             }
-            columns[i - 3]->Insert(h);
-            inserted_list.push_back(columns[i - 3]->Search(h));
+            insertt = columns[i - 3]->Insert(h);
+            // cout << insertt->data << " *** ";
+            // inserted_list.push_back(columns[i - 3]->Search(h));
+            inserted_list.push_back(insertt);
         }
 
         // fix next_fields of nodes
@@ -275,24 +283,172 @@ void Table::deletion(vector<string> tokens) {
         }
         // do conditions
         if (operation == "==") {
+            BTree* bt = columns[col % columns.size()];
+            BTNode* rt = bt->get_root();
+            vector<Node*> all_equal_nodes;
+            check_for_equal(rt, h, all_equal_nodes);       // find all nodes that are equal to statement
+            
+            for (int i = 0; i < all_equal_nodes.size(); i++) {   // for all nodes that had the condition
+                for (int j = 0; j < columns.size(); j++) {        // delete all entries of them
+                    BTree* bt = columns[col % columns.size()];
+                    if (fields[0][col % columns.size()] == "id") {
+                        id_table[all_equal_nodes[i]->data] = true;      // free the deleted nodes id
+                    }
+                    bt->Delete2(all_equal_nodes[i]);   // delete the node
+                    bt->traverse();
+                    all_equal_nodes[i] = all_equal_nodes[i]->nextField;
+                    col++;
+                }
+            }
+        }
+        else if (operation == ">") {
+            BTree* bt = columns[col % columns.size()];
+            BTNode* rt = bt->get_root();
+            vector<Node*> all_greater_nodes;
+            check_for_greater(rt, h, all_greater_nodes);       // find all nodes that are greater than statement
+            
+            for (int i = 0; i < all_greater_nodes.size(); i++) {   // for all nodes that had the condition
+                for (int j = 0; j < columns.size(); j++) {        // delete all entries of them
+                    BTree* bt = columns[col % columns.size()];
+                    if (fields[0][col % columns.size()] == "id") {
+                        id_table[all_greater_nodes[i]->data] = true;      // free the deleted nodes id
+                    }
+
+                    bt->Delete2(all_greater_nodes[i]);   // delete the node
+                    bt->traverse();
+                    all_greater_nodes[i] = all_greater_nodes[i]->nextField;
+                    col++;
+                }
+            }
+        }
+        else if (operation == "<") {
+            BTree* bt = columns[col % columns.size()];
+            BTNode* rt = bt->get_root();
+            vector<Node*> all_smaller_nodes;
+            check_for_smaller(rt, h, all_smaller_nodes);       // find all nodes that are smaller than statement
+            
+            for (int i = 0; i < all_smaller_nodes.size(); i++) {   // for all nodes that had the condition
+                for (int j = 0; j < columns.size(); j++) {        // delete all entries of them
+                    BTree* bt = columns[col % columns.size()];
+                    if (fields[0][col % columns.size()] == "id") {
+                        id_table[all_smaller_nodes[i]->data] = true;      // free the deleted nodes id
+                    }
+                    // cout << "delete " << all_equal_nodes[i]->data << endl;
+                    bt->Delete2(all_smaller_nodes[i]);   // delete the node
+                    bt->traverse();
+                    all_smaller_nodes[i] = all_smaller_nodes[i]->nextField;
+                    col++;
+                }
+            }
+        }
+    }
+    // column not found
+    else {
+        cout << "There is not such a column in this table, please try again." << endl;
+        return;
+    }
+
+}
+//////////////////////////////////////////////////////
+void Table::update(vector<string> tokens) {
+    int pos_tok =  columns.size() + 3;
+    // cout << pos_tok << endl;
+    string condition = tokens[pos_tok], fields_name, operation, state;
+    // cout << condition << endl;
+    int pos = -1;
+    // find the condition phrase
+    pos = condition.find("==");
+    if (pos != -1) {     // condition is ==
+        fields_name = condition.substr(0, pos);
+        operation = condition.substr(pos, 2);
+        state = condition.substr(pos + 2);
+    }
+    else {
+        pos = condition.find(">");
+        if (pos != -1) {      // condition is >
+            fields_name = condition.substr(0, pos);
+            operation = condition.substr(pos, 1);
+            state = condition.substr(pos + 1);
+        }
+        else {
+            pos = condition.find("<");       // condition is <
+            if (pos != -1) {
+                fields_name = condition.substr(0, pos);
+                operation = condition.substr(pos, 1);
+                state = condition.substr(pos + 1);
+            }
+            else {                // condition is undefined, so break up
+                cout << "Invalid condition! Please Try again." << endl;
+                return;
+            }
+        }
+    }
+    // find the column that we want to get query on it
+    int col = -1;
+    for (int i = 0; i < fields[0].size(); i++) {
+        if (fields[0][i] == fields_name) {
+            col = i;
+            break;
+        }
+    }
+    // column found
+    if (col != -1) {
+        long long int h, h2;
+        // hash the statement base on type of column
+        if (fields[1][col] == "string") {
+            h = hash_string(state);
+        }
+        else if (fields[1][col] == "timestamp") {
+            h = hash_date(state);
+        }
+        else if (fields[1][col] == "int") {
+            h = stoll(state);
+        }
+        // what to change
+        vector<string> change;
+        vector<long long int> hash_change;
+        vector<int> ids;
+        for (int i = 3; i < columns.size() + 2; i++) {
+            change.push_back(tokens[i]);
+        }
+        for (int i = 0; i < change.size(); i++) {
+            if (fields[1][i + 1] == "string") {
+                h2 = hash_string(change[i]);
+            }
+            else if (fields[1][i + 1] == "timestamp") {
+                h2 = hash_date(change[i]);
+            }
+            else if (fields[1][i + 1] == "int") {
+                h2 = stoll(change[i]);
+            }
+            hash_change.push_back(h2);
+        }
+        int counter = 0;
+        // do conditions
+        if (operation == "==") {
+            
             while (true) {
+                cout << "h: "<< h<<endl;
                 Node* node = columns[col % columns.size()]->Search(h);
                 Node* del_node = columns[col % columns.size()]->Search(h);
                 // data found
                 if (node) {
-                    cout << node->data << "--" <<endl;
+                    counter++;
+                    cout << node->nextField->data << "--" <<endl;
                     vector<Node*> all_nodes;
                     
                     for (int i = 0; i < columns.size(); i++) {
+                        cout << "here" << endl;
                         all_nodes.push_back(node);
                         node = node->nextField;
+                        cout << node->data << endl;
                     }
-
+                    cout << "get here"<<endl;
                     for (int i = 0; i < all_nodes.size(); i++) {
                         BTree* bt = columns[col % columns.size()];
                         // open the id that is deleted
                         if (fields[0][col % columns.size()] == "id") {
-                            id_table[all_nodes[i]->data] = true;
+                            ids.push_back(all_nodes[i]->data);    // save the id
                         }
                         bt->Delete(all_nodes[i]->data);
                         bt->traverse();
@@ -307,7 +463,8 @@ void Table::deletion(vector<string> tokens) {
         }
         else if (operation == ">") {
             while (true) {
-                cout <<"col: "<<col<<endl;
+                counter++;
+                cout <<"col: "<<h<<endl;
                 Node* node = columns[col % columns.size()]->search_for_greaters(h);
                 Node* del_node = columns[col % columns.size()]->search_for_greaters(h);
                 // data found
@@ -324,7 +481,7 @@ void Table::deletion(vector<string> tokens) {
                         BTree* bt = columns[col % columns.size()];
                         // open the id that is deleted
                         if (fields[0][col % columns.size()] == "id") {
-                            id_table[all_nodes[i]->data] = true;
+                            ids.push_back(all_nodes[i]->data);    // save the id
                         }
                         bt->Delete(all_nodes[i]->data);
                         bt->traverse();
@@ -339,12 +496,13 @@ void Table::deletion(vector<string> tokens) {
         }
         else if (operation == "<") {
             while (true) {
-                cout <<"col: "<<col<<endl;
+                counter++;
+                // cout <<"col: "<<col<<endl;
                 Node* node = columns[col % columns.size()]->search_for_smaller(h);
                 Node* del_node = columns[col % columns.size()]->search_for_smaller(h);
                 // data found
                 if (node) {
-                    cout << node->data << "--" <<endl;
+                    // cout << node->data << "--" <<endl;
                     vector<Node*> all_nodes;
                     
                     for (int i = 0; i < columns.size(); i++) {
@@ -356,7 +514,7 @@ void Table::deletion(vector<string> tokens) {
                         BTree* bt = columns[col % columns.size()];
                         // open the id that is deleted
                         if (fields[0][col % columns.size()] == "id") {
-                            id_table[all_nodes[i]->data] = true;
+                            ids.push_back(all_nodes[i]->data);    // save the id
                         }
                         bt->Delete(all_nodes[i]->data);
                         bt->traverse();
@@ -369,15 +527,96 @@ void Table::deletion(vector<string> tokens) {
                 }
             }
         }
+        
+        // insert updated datas
+        for (int i = 0; i < counter; i++) {
+            vector<Node*> inserted_nodes;
+            long long int h;
+            Node* node;
+            for (int j = 0; j < columns.size(); j++) {
+                if (j == 0) {
+                    // id column
+                    h = ids[i];
+                }
+                else {
+                    h = hash_change[i - 1];
+                }
+                columns[j]->Insert(h);
+                node = columns[j]->Search(h);
+                inserted_nodes.push_back(node);
+            }
+            // fix next_fields of nodes
+            for (int i = 0; i < inserted_nodes.size() - 1; i++) {
+                inserted_nodes[i]->nextField = inserted_nodes[i + 1];
+            }
+            inserted_nodes[inserted_nodes.size() - 1]->nextField = inserted_nodes[0];
+        }
     }
-    // column not found
-    else {
-        cout << "There is not such a column in this table, please try again." << endl;
-        return;
-    }
-
 }
-//////////////////////////////////////////////////////
+/////////////////////////////////////////////////////
+void Table::check_for_equal(BTNode* node, long long int h, vector<Node*> & change) {
+    long long int i;
+
+    for (i = 0; i < node->num_keys; i++) {
+        // cout << "ding" << endl;
+        // If this is not leaf, then before key[i]
+        // traverse the subtree rooted with child C[i]
+        if (node->is_leaf == false)
+            check_for_equal(node->child[i], h, change);
+        // cout << node->key[i]->data << " ";
+        if (node->key[i]->data == h) {
+            change.push_back(node->key[i]);
+        }
+    }
+ 
+    // subtree rooted with last child
+    if (node->is_leaf == false) {
+        check_for_equal(node->child[i], h, change);
+    }
+}
+//////////////////////////////////////////////////////////////////////////////
+void Table::check_for_greater(BTNode* node, long long int h, vector<Node*> & change) {
+    long long int i;
+
+    for (i = 0; i < node->num_keys; i++) {
+        // cout << "ding" << endl;
+        // If this is not leaf, then before key[i]
+        // traverse the subtree rooted with child C[i]
+        if (node->is_leaf == false)
+            check_for_equal(node->child[i], h, change);
+        // cout << node->key[i]->data << " ";
+        if (node->key[i]->data > h) {
+            change.push_back(node->key[i]);
+        }
+    }
+ 
+    // subtree rooted with last child
+    if (node->is_leaf == false) {
+        check_for_equal(node->child[i], h, change);
+    }
+}
+//////////////////////////////////////////////////////////////////////////////
+void Table::check_for_smaller(BTNode* node, long long int h, vector<Node*> & change) {
+    long long int i;
+
+    for (i = 0; i < node->num_keys; i++) {
+        // cout << "ding" << endl;
+        // If this is not leaf, then before key[i]
+        // traverse the subtree rooted with child C[i]
+        if (node->is_leaf == false)
+            check_for_equal(node->child[i], h, change);
+        // cout << node->key[i]->data << " ";
+        if (node->key[i]->data < h) {
+            change.push_back(node->key[i]);
+        }
+    }
+ 
+    // subtree rooted with last child
+    if (node->is_leaf == false) {
+        check_for_equal(node->child[i], h, change);
+    }
+}
+//////////////////////////////////////////////////////////////////////////////
 int main() {
     string input;
     int n;
@@ -454,10 +693,28 @@ int main() {
             }
             
         }
-        else if (operation == "SELECT") {
-
-        }
         else if (operation == "UPDATE") {
+            string table_name = tokens[1];         // second token should be name of table we wanna update 
+            // find the table object
+            Table* table_obj = NULL;
+            for (int i = 0; i < all_tables.size(); i++) {
+                if (all_tables[i]->get_name() == table_name) {
+                    // cout << "HERE"<<endl;
+                    table_obj = all_tables[i];
+                    break;
+                }
+            }
+            // the table not exists
+            if (!table_obj) {
+                cout << "Sorry! there is not such a table, Please try again." << endl;
+            }
+            // table found
+            else {
+                // cout << "HERE" << endl;
+                table_obj->update(tokens);
+            }
+        }
+        else if (operation == "SELECT") {
 
         }
     }

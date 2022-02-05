@@ -21,10 +21,11 @@ class BTNode {
         long long int num_keys;
 
         BTNode(long long int);
-        BTNode* find_insert_place(long long int, BTNode*, long long int, BTNode*);
+        BTNode* find_insert_place(long long int, BTNode*, long long int, BTNode*, Node* &);
         void split_nodes(BTNode*, long long int);
         void traverse(long long int);
         void delete_node(long long int, long long int);
+        void delete_node2(Node*, long long int);
         Node* predecessor(long long int);
         Node* successor(long long int);
         Node* search_node(long long int);
@@ -46,7 +47,7 @@ BTNode::BTNode(long long int m) {
     }
 }
 /////////////////////////////////////////////////////
-BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long int t, BTNode* root) {
+BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long int t, BTNode* root, Node* & new_key) {
     // case 1: we are at leaf node
     if (is_leaf) {
         long long int i = t;
@@ -60,7 +61,7 @@ BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long in
             i--;
         }
         // initializing the new key
-        Node* new_key = new Node;
+        // Node* new_key = new Node;
         new_key->data = data;
         new_key->nextField = NULL;
         new_key->self = curr;
@@ -75,7 +76,7 @@ BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long in
             i++;
         }
         // the right child found, go recusrively to find the real place at the leaf
-        child[i]->find_insert_place(data, this, t, root);   
+        child[i]->find_insert_place(data, this, t, root, new_key);   
     }
     // the current node is full
     if (num_keys == t) {
@@ -373,6 +374,212 @@ void BTNode::delete_node(long long int k, long long int t) {
             // case 2-2-3: children are not merged or key_counter does not increased
             else {
                 child[key_counter]->delete_node(k, t);
+            }
+        }
+    }
+    return;
+}
+//////////////////////////////////////////////////////////////////////
+void BTNode::delete_node2(Node* k, long long int t) {
+    // find the parent node place or exact place of accurance
+    long long int key_counter = 0;
+    // do untill getting the key that is greater than k
+    while (key_counter < num_keys && key[key_counter]->data < k->data) {
+        key_counter++;
+    }
+    // key_counter is the next place we should go
+    // case 1: k is exactly in this node
+    if (key_counter < num_keys && key[key_counter] == k) {
+        // case 1-1: delete from leaf
+        if (is_leaf) {
+            // just move next keys one step backward
+            for (long long int i = key_counter + 1; i < num_keys; i++) {
+                key[i - 1] = key[i];
+            }
+            // reduce the number of keys by 1
+            num_keys--;
+        }
+        // case 1-2: delete from non-leaf node
+        else {
+            // case 1-2-1: this key's child has at least t/2 keys
+            if (child[key_counter]->num_keys >= t / 2) {
+                Node* pre = predecessor(key_counter);
+                // replace the predecessor with deleted key
+                key[key_counter] = pre;
+                // recursively remove the predesessor
+                child[key_counter]->delete_node2(pre, t);
+            } 
+            // case 1-2-2: this key's child has not enough children so test his right brother
+            else if (child[key_counter + 1]->num_keys >= t / 2) {
+                Node* suc = successor(key_counter);
+                // replace the successor with deleted key
+                key[key_counter] = suc;
+                // recursively remove the successor
+                child[key_counter + 1]->delete_node2(suc, t);
+            }
+            // case 1-2-3: non of them have enough children so merge 2 children
+            else {
+                BTNode* lchild = child[key_counter];
+                BTNode* rchild = child[key_counter + 1];
+                // put the key in rchild
+                lchild->key[(t / 2) - 1] = key[key_counter];
+                // move right child keys and children to left child 
+                for (long long int i = 0; i < rchild->num_keys; i++) {
+                    lchild->key[i + (t / 2)] = rchild->key[i];
+                    // if it has any children pass them to left child
+                    if (lchild->is_leaf == false) {
+                        lchild->child[i + (t / 2)] = rchild->child[i];
+                    }
+                }
+                // move keys 1 step and children 2 step backward
+                for (long long int i = key_counter + 1; i < num_keys; i++) {
+                    key[i - 1] = key[i];
+                    child[i] = child[i + 1];
+                }
+
+                // number of keys in left child increased 
+                lchild->num_keys += rchild->num_keys + 1;
+                // number of keys in this node decreased
+                num_keys--;
+                // free the memory of right child after merging
+                delete(rchild);
+                // recursively remove the key that is in child now
+                child[key_counter]->delete_node2(k, t);
+            }
+        }
+    }
+    // case 2: k is not accured in this node
+    else {
+        // case 2-1: we are at leaf node and there is not any chilren so the key was not found
+        if (is_leaf) {
+            cout << "sorry! there is not such a key in this tree." << endl;
+            return;
+        }
+        // case 2-2: the key is in subtrees of this node
+        else {
+            // case 2-2-1: key is in last keys child and the child has more than allowed keys
+            // check if it is the last child
+            long long int last_child = 0;
+            if (key_counter == num_keys) {
+                last_child = 1;
+            }
+            if (child[key_counter]->num_keys < t / 2) {
+                // case 2-2-1-1: borrow key from left brother
+                if (key_counter != 0 && child[key_counter - 1]->num_keys >= t / 2) {
+                    BTNode* rrchild = child[key_counter];
+                    BTNode* llchild = child[key_counter - 1];
+                    
+                    // move children and children of it forward
+                    for (long long int i = rrchild->num_keys - 1; i >= 0; i--) {
+                        rrchild->key[i + 1] = rrchild->key[i];
+                        // it has children
+                        if (rrchild->is_leaf == false) {
+                            rrchild->child[i + 2] = rrchild->child[i + 1];
+                        }
+                    }
+                    // pass the children
+                    rrchild->key[0] = key[key_counter - 1];
+                    if (rrchild->is_leaf == false) {
+                        rrchild->child[0] = llchild->child[llchild->num_keys];
+                    }
+                    // move the right child's key up
+                    key[key_counter - 1] = llchild->key[llchild->num_keys - 1];
+                    // update number of keys
+                    rrchild->num_keys++;
+                    llchild->num_keys--;
+                }
+                // case 2-2-1-2: borrow key from right brother
+                else if (key_counter != num_keys && child[key_counter + 1]->num_keys >= t / 2) {
+                    BTNode* llchild = child[key_counter];
+                    BTNode* rrchild = child[key_counter + 1];
+
+                    // move key as a child
+                    llchild->key[llchild->num_keys] = key[key_counter];
+                    
+                    // move children of children 
+                    if (llchild->is_leaf == false) {
+                        llchild->child[llchild->num_keys + 1] = rrchild->child[0];
+                    }
+                    // pass the key
+                    key[key_counter] = rrchild->key[0];
+                    // move keys and children of right child backward
+                    for (long long int i = 1; i < rrchild->num_keys; i++) {
+                        rrchild->key[i - 1] = rrchild->key[i];
+                    }
+                    // if it has any children
+                    if (rrchild->is_leaf == false) {
+                        for (long long int i = 0; i < rrchild->num_keys; i++) {
+                            rrchild->child[i] = rrchild->child[i + 1];
+                        }
+                    }
+                    
+                    // update number of keys
+                    rrchild->num_keys--;
+                    llchild->num_keys++;
+                }
+                // case 2-2-1-3: we can't borrow from brothers so merge with next child
+                else if (key_counter != num_keys) {
+                    BTNode* lchild = child[key_counter];
+                    BTNode* rchild = child[key_counter + 1];
+                    // put the key in rchild
+                    lchild->key[(t / 2) - 1] = key[key_counter];
+                    // move right child keys and children to left child 
+                    for (long long int i = 0; i < lchild->num_keys; i++) {
+                        lchild->key[i + (t / 2)] = rchild->key[i];
+                        // if it has any children pass them to left child
+                        if (lchild->is_leaf == false) {
+                            lchild->child[i + (t / 2)] = rchild->child[i];
+                        }
+                    }
+                    // move keys 1 step and children 2 step backward
+                    for (long long int i = key_counter + 1; i < num_keys; i++) {
+                        key[i - 1] = key[i];
+                        child[i] = child[i + 1];
+                    }
+
+                    // number of keys in left child increased 
+                    lchild->num_keys += rchild->num_keys + 1;
+                    // number of keys in this node decreased
+                    num_keys--;
+                    // free the memory of right child after merging
+                    delete(rchild);
+                }
+                // case 2-2-1-4: we can't borrow from brothers so merge with last child
+                else {
+                    BTNode* lchild = child[key_counter - 1];
+                    BTNode* rchild = child[key_counter];
+                    // put the key in rchild
+                    lchild->key[(t / 2) - 1] = key[key_counter - 1];
+                    // move right child keys and children to left child 
+                    for (long long int i = 0; i < lchild->num_keys; i++) {
+                        lchild->key[i + (t / 2)] = rchild->key[i];
+                        // if it has any children pass them to left child
+                        if (lchild->is_leaf == false) {
+                            lchild->child[i + (t / 2)] = rchild->child[i];
+                        }
+                    }
+                    // move keys 1 step and children 2 step backward
+                    for (long long int i = key_counter; i < num_keys; i++) {
+                        key[i - 1] = key[i];
+                        child[i] = child[i + 1];
+                    }
+
+                    // number of keys in left child increased 
+                    lchild->num_keys += rchild->num_keys + 1;
+                    // number of keys in this node decreased
+                    num_keys--;
+                    // free the memory of right child after merging
+                    delete(rchild);
+                }
+            }
+            // case 2-2-2: children are merged
+            if (last_child && key_counter > num_keys) {
+                // recursively delete
+                child[key_counter - 1]->delete_node2(k, t);
+            }
+            // case 2-2-3: children are not merged or key_counter does not increased
+            else {
+                child[key_counter]->delete_node2(k, t);
             }
         }
     }
