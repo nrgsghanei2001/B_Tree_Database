@@ -66,6 +66,7 @@ BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long in
         new_key->nextField = NULL;
         new_key->self = curr;
         key[i] = new_key;     // put the key in the right place
+        // cout << "keeeeeeeey: "<<key[i]->data<<endl;
         num_keys++;
     }
     // case 2: we are not at leaf
@@ -81,7 +82,7 @@ BTNode* BTNode::find_insert_place(long long int data, BTNode* curr, long long in
     // the current node is full
     if (num_keys == t) {
         // we are at root node
-        if(this == root) {
+        if (this == root) {
             // create new node and split the full node
             BTNode* new_node = new BTNode(t);
             new_node->is_leaf = false;
@@ -224,6 +225,9 @@ void BTNode::delete_node(long long int k, long long int t) {
                     if (lchild->is_leaf == false) {
                         lchild->child[i + (t / 2)] = rchild->child[i];
                     }
+                    if (lchild->is_leaf == false && i == rchild->num_keys - 1) {
+                        lchild->child[i + 1 + (t / 2)] = rchild->child[i + 1];
+                    }
                 }
                 // move keys 1 step and children 2 step backward
                 for (long long int i = key_counter + 1; i < num_keys; i++) {
@@ -236,6 +240,7 @@ void BTNode::delete_node(long long int k, long long int t) {
                 // number of keys in this node decreased
                 num_keys--;
                 // free the memory of right child after merging
+                cout << endl << "--------B---------" << endl;
                 delete(rchild);
                 // recursively remove the key that is in child now
                 child[key_counter]->delete_node(k, t);
@@ -336,6 +341,7 @@ void BTNode::delete_node(long long int k, long long int t) {
                     // number of keys in this node decreased
                     num_keys--;
                     // free the memory of right child after merging
+                    cout << endl << "--------C-----------" << endl;
                     delete(rchild);
                 }
                 // case 2-2-1-4: we can't borrow from brothers so merge with last child
@@ -363,6 +369,7 @@ void BTNode::delete_node(long long int k, long long int t) {
                     // number of keys in this node decreased
                     num_keys--;
                     // free the memory of right child after merging
+                    cout << endl << "--------D---------" << endl;
                     delete(rchild);
                 }
             }
@@ -397,10 +404,13 @@ void BTNode::delete_node2(Node* k, long long int t) {
                 key[i - 1] = key[i];
             }
             // reduce the number of keys by 1
+            // cout << endl << "---------******--------" << endl;
+            key[num_keys - 1] = NULL;
             num_keys--;
         }
         // case 1-2: delete from non-leaf node
         else {
+            Node* k2 = key[key_counter];
             // case 1-2-1: this key's child has at least t/2 keys
             if (child[key_counter]->num_keys >= t / 2) {
                 Node* pre = predecessor(key_counter);
@@ -430,6 +440,9 @@ void BTNode::delete_node2(Node* k, long long int t) {
                     if (lchild->is_leaf == false) {
                         lchild->child[i + (t / 2)] = rchild->child[i];
                     }
+                    if (lchild->is_leaf == false && i == rchild->num_keys - 1) {
+                        lchild->child[i + 1 + (t / 2)] = rchild->child[i + 1];
+                    }
                 }
                 // move keys 1 step and children 2 step backward
                 for (long long int i = key_counter + 1; i < num_keys; i++) {
@@ -442,9 +455,10 @@ void BTNode::delete_node2(Node* k, long long int t) {
                 // number of keys in this node decreased
                 num_keys--;
                 // free the memory of right child after merging
+                cout << endl << "---------E--------" << endl;
                 delete(rchild);
                 // recursively remove the key that is in child now
-                child[key_counter]->delete_node2(k, t);
+                child[key_counter]->delete_node2(k2, t);
             }
         }
     }
@@ -474,6 +488,9 @@ void BTNode::delete_node2(Node* k, long long int t) {
                         rrchild->key[i + 1] = rrchild->key[i];
                         // it has children
                         if (rrchild->is_leaf == false) {
+                            rrchild->child[i + 1] = rrchild->child[i];
+                        }
+                        if (rrchild->is_leaf == false && i == rrchild->num_keys - 1) {
                             rrchild->child[i + 2] = rrchild->child[i + 1];
                         }
                     }
@@ -530,6 +547,9 @@ void BTNode::delete_node2(Node* k, long long int t) {
                         if (lchild->is_leaf == false) {
                             lchild->child[i + (t / 2)] = rchild->child[i];
                         }
+                        if (lchild->is_leaf == false && i == lchild->num_keys - 1) {
+                            lchild->child[i + 1 + (t / 2)] = rchild->child[i + 1];
+                        }
                     }
                     // move keys 1 step and children 2 step backward
                     for (long long int i = key_counter + 1; i < num_keys; i++) {
@@ -542,6 +562,7 @@ void BTNode::delete_node2(Node* k, long long int t) {
                     // number of keys in this node decreased
                     num_keys--;
                     // free the memory of right child after merging
+                    cout << endl << "--------F--------" << endl;
                     delete(rchild);
                 }
                 // case 2-2-1-4: we can't borrow from brothers so merge with last child
@@ -557,6 +578,9 @@ void BTNode::delete_node2(Node* k, long long int t) {
                         if (lchild->is_leaf == false) {
                             lchild->child[i + (t / 2)] = rchild->child[i];
                         }
+                        if (lchild->is_leaf == false && i == lchild->num_keys - 1) {
+                            lchild->child[i + 1 + (t / 2)] = rchild->child[i + 1];
+                        }
                     }
                     // move keys 1 step and children 2 step backward
                     for (long long int i = key_counter; i < num_keys; i++) {
@@ -569,6 +593,7 @@ void BTNode::delete_node2(Node* k, long long int t) {
                     // number of keys in this node decreased
                     num_keys--;
                     // free the memory of right child after merging
+                    cout << endl << "-----------A-----------" << endl;
                     delete(rchild);
                 }
             }
