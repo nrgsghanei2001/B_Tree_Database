@@ -7,11 +7,39 @@
 using namespace std;
 
 long long int hash_string(string s) {
-    long long int h = 0;
+    // long long int h = 0;
+    // for (int i = 0; i < s.length(); i++) {
+    //     h += int(s[i]) * (i + 1);
+    // }
+    // return h;
+    char hash_table[36] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+     'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    
+    long long int hashed = 0;
     for (int i = 0; i < s.length(); i++) {
-        h += int(s[i]) * (i + 1);
+        char ch = s[i];
+        int h = 0;
+        for (int j = 0; j < 36; j++) {
+            if (ch == hash_table[j]) {
+                h = j;
+                break;
+            }
+        }
+        hashed += h * pow(36, i);
     }
-    return h;
+    return hashed;
+}
+//////////////////////////////////////////////////////
+string dehash_string(long long int hashed) {
+    char hash_table[36] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+     'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    string dehash = "";
+    while (hashed != 0) {
+        int d = hashed % 36;
+        dehash += hash_table[d];
+        hashed /= 36;
+    }
+    return dehash;
 }
 //////////////////////////////////////////////////////
 long long int hash_date(string date) {
@@ -37,6 +65,31 @@ long long int hash_date(string date) {
     return h;
 }
 /////////////////////////////////////////////////////
+string dehash_date(long long int d) {
+    string dehash = "";
+    string date = to_string(d);
+    string year = date.substr(0, 4);
+    string month = date.substr(4, 2);
+    string day = date.substr(6, 2);
+    dehash += year;
+    dehash += '/';
+    if (month[0] == '0') {
+        dehash += month[1];
+    }
+    else {
+        dehash += month;
+    }
+    dehash += '/';
+    if (day[0] == '0') {
+        dehash += day[1];
+    }
+    else {
+        dehash += day;
+    }
+
+    return dehash;
+}
+////////////////////////////////////////////////////
 class Query {
     private:
         vector<string> tokens;
@@ -550,16 +603,17 @@ void Table::check_for_greater(BTNode* node, long long int h, vector<Node*> & cha
         // If this is not leaf, then before key[i]
         // traverse the subtree rooted with child C[i]
         if (node->is_leaf == false)
-            check_for_equal(node->child[i], h, change);
+            check_for_greater(node->child[i], h, change);
         // cout << node->key[i]->data << " ";
         if (node->key[i]->data > h) {
+            // cout << "entry: " << node->key[i]->data << endl;
             change.push_back(node->key[i]);
         }
     }
  
     // subtree rooted with last child
     if (node->is_leaf == false) {
-        check_for_equal(node->child[i], h, change);
+        check_for_greater(node->child[i], h, change);
     }
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -571,7 +625,7 @@ void Table::check_for_smaller(BTNode* node, long long int h, vector<Node*> & cha
         // If this is not leaf, then before key[i]
         // traverse the subtree rooted with child C[i]
         if (node->is_leaf == false)
-            check_for_equal(node->child[i], h, change);
+            check_for_smaller(node->child[i], h, change);
         // cout << node->key[i]->data << " ";
         if (node->key[i]->data < h) {
             change.push_back(node->key[i]);
@@ -580,7 +634,7 @@ void Table::check_for_smaller(BTNode* node, long long int h, vector<Node*> & cha
  
     // subtree rooted with last child
     if (node->is_leaf == false) {
-        check_for_equal(node->child[i], h, change);
+        check_for_smaller(node->child[i], h, change);
     }
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -673,44 +727,61 @@ void Table::select(vector<string> tokens, int table_ind) {
             BTNode* rt = bt->get_root();
             check_for_smaller(rt, h, all_nodes);       // find all nodes that are equal to statement
         }
-        vector<vector<long long int>> answers;
-        vector<Node*> sorted1, sorted2;
-        sorted1 = all_nodes;
+        vector<vector<string>> answers;
         // vector<Node*> sorted1, sorted2;
-        // for (int i = 0; i < all_nodes.size(); i++) {
-        //     Node* move = all_nodes[i];
-        //     int cur_col = col;
-            
-        //     while (cur_col % columns.size() != 0) {
-        //         move = move->nextField;
-        //         cur_col++;
-        //     }
-        //     sorted1.push_back(move);
-        // }
-        // for (int i = 0; i < sorted1.size(); i++) {
-        //     for (int j = i + 1; j < sorted1.size(); j++) {
-        //         if (sorted1[i]->data > sorted1[j]->data) {
-        //             Node* temp = sorted1[i];
-        //             sorted1[i] = sorted1[j];
-        //             sorted1[j] = temp;
-        //         }
-        //     }
-        // }
-        for (int i = 0; i < sorted1.size(); i++) {
-            answers.push_back({});
-            Node* move = sorted1[i];
+        // sorted1 = all_nodes;
+        vector<Node*> sorted1, sorted2;
+        for (int i = 0; i < all_nodes.size(); i++) {
+            Node* move = all_nodes[i];
             int cur_col = col;
             
             while (cur_col % columns.size() != 0) {
                 move = move->nextField;
                 cur_col++;
             }
+            sorted1.push_back(move);
+        }
+        for (int i = 0; i < sorted1.size(); i++) {
+            for (int j = i + 1; j < sorted1.size(); j++) {
+                if (sorted1[i]->data > sorted1[j]->data) {
+                    Node* temp = sorted1[i];
+                    sorted1[i] = sorted1[j];
+                    sorted1[j] = temp;
+                }
+            }
+        }
+        // for (int i = 0; i < sorted1.size(); i++) {
+        //     cout << sorted1[i]->data << " / ";
+        // }
+        // cout << endl;
+        for (int i = 0; i < sorted1.size(); i++) {
+            answers.push_back({});
+            Node* move = sorted1[i];
+            // int cur_col = col;
+            
+            // while (cur_col % columns.size() != 0) {
+            //     move = move->nextField;
+            //     cur_col++;
+            // }
             // cout << "CUR: " << cur_col<<endl;
             for (int j = 0; j < columns.size(); j++) {
                 for (int k = 0; k < selected_columns.size(); k++) {
                     if (selected_columns[k] == j) {
-                        answers[i].push_back(move->data);
-                        break;
+                        if (fields[1][j] == "string") {
+                            string dehash = dehash_string(move->data);
+                            answers[i].push_back(dehash);
+                            break;
+                        }
+                        else if (fields[1][j] == "timestamp") {
+                            string dehash = dehash_date(move->data);
+                            answers[i].push_back(dehash);
+                            break;
+                        }
+                        else {
+                            answers[i].push_back(to_string(move->data));
+                            break;
+                        }
+                        
                     }
                 }
                 move = move->nextField;
@@ -731,6 +802,7 @@ void Table::select(vector<string> tokens, int table_ind) {
 }
 //////////////////////////////////////////////////////////////////////////////
 int main() {
+    
     string input;
     int n;
     cin >> n;
@@ -857,7 +929,7 @@ int main() {
             }
         }
     }
-     
+    cout << endl << endl << "****************************" << endl << endl;
     for (int i = 0; i < all_tables.size(); i++) {
         // cout << "got";
         cout << all_tables[i]->get_name() << endl;
