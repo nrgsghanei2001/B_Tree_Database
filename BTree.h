@@ -1,112 +1,143 @@
-#include<iostream>
-#include<vector>
-#include<cmath>
-#include"BTreeNode.h"
+#include "BTreeNode.h"
+#include <vector>
+#include <iostream>
 using namespace std;
 
 
 // Class B tree with all operations on tree
 class BTree {
     private:
-        BTNode* root;
-        long long int t;
+        BTNode* root;                    // root of the tree
+        int t;                           // maximum number of keys in a tree node
 
     public:
-        BTree(long long int);
-        Node* Search(long long int);
-        Node* create_node(long long int, BTNode*);
-        Node* Insert(long long int);
-        void Delete(long long int);
-        void Delete2(Node*);
-        void Update(long long int);
-        void traverse();
-        Node* search_for_greaters(long long int);
-        Node* search_for_smaller(long long int k);
-        BTNode* get_root();
-
+        BTree(int);                                                                          // constructor   
+        BTNode* get_root();                                                                  // get the tree's root     
+        Node*   create_node(long long int, BTNode*);                                         // create new Node object
+        Node*   Insert(long long int);                                                       // insert data to keys
+        Node*   Search(long long int);                                                       // search for the given data
+        void    Delete(Node*);                                                               // delete given node from tree
+        void    check_for_equal(BTNode*, long long int, vector<Node*> &);                    // find all equal nodes to given node data
+        void    check_for_greater(BTNode*, long long int, vector<Node*> &);                  // find all nodes that are greater then the given node data
+        void    check_for_smaller(BTNode*, long long int, vector<Node*> &);                  // find all nodes that are smaller then the given node data
+        void    traverse();                                                                  // print the tree
+        // void Update(long long int);
+        // Node* search_for_greaters(long long int);
+        // Node* search_for_smaller(long long int k);
 };
-//////////////////////////////////////////////////////
-BTree::BTree(long long int dgr) {
-    root = NULL;
-    t = dgr + 1;
+///////////////////////////////////////////////////////////////////////////////////////////////////
+BTree::BTree(int dgr) {
+    root = NULL;                                        // set the root null
+    t    = dgr + 1;
 }
-/////////////////////////////////////////////////////
-Node* BTree::Search(long long int k) {
-    return root->search_node(k);
-}
-/////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 Node* BTree::create_node(long long int data, BTNode *node) {
-    Node* key = new Node;        // create element of root node
-    key->data = data;               // initialize element of root node
-    key->nextField = NULL;
-    key->self = node;            // recognize root as array that the element is in it
+    Node* key      = new Node;           // create element of root node
+    key->data      = data;               // initialize element of root node
+    key->nextField = NULL;               // it does not point to any node at first
+    key->self      = node;               // recognize node as array that the element is in it
 
     return key;
 }
-/////////////////////////////////////////////////////////
-Node* BTree::Insert(long long int data) {
-    Node* new_key = new Node;
-    // case 1: the tree is empty
-    if (!root) {                          
-        root = new BTNode(t);                // create root node
-        Node* key = create_node(data, root);
-        root->key[0] = key;    // add node to root node
-        root->num_keys++;
-        return root->key[0];
-    }
-    // case 2: the root is not empty
-    else {
-        root = root->find_insert_place(data, root, t, root, new_key);
-        return new_key;
-    }
-    
-}
-///////////////////////////////////////////////////////
-void BTree::Delete(long long int k) {
-    // case 1: the tree is empty
-    if (root == NULL) {
-        cout << "There is nothing to delete.";
-        return;
-    }
-    // case 2: non-empty tree
-    else {
-        // go deletiong from root
-        root->delete_node(k, t);
-    } 
-}
-/////////////////////////////////////////////////////
-void BTree::Delete2(Node* k) {
-    // case 1: the tree is empty
-    if (root == NULL) {
-        cout << "There is nothing to delete.";
-        return;
-    }
-    // case 2: non-empty tree
-    else {
-        // go deletiong from root
-        root->delete_node2(k, t);
-    }  
-}
-/////////////////////////////////////////////////////
-void BTree::Update(long long int k) {
-    
-}
-/////////////////////////////////////////////////////
-void BTree::traverse() {
-    root->traverse(0);
-}
-//////////////////////////////////////////////////////
-Node* BTree::search_for_greaters(long long int k) {
-
-    return root->find_greaters(k);
-}
-//////////////////////////////////////////////////////
-Node* BTree::search_for_smaller(long long int k) {
-
-    return root->find_smallers(k);
-}
-//////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 BTNode* BTree::get_root() {
     return root;
 } 
-//////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void BTree::check_for_equal(BTNode* node, long long int h, vector<Node*> & result) {
+    int i;
+
+    for (i = 0; i < node->num_keys; i++) {
+        // If this is not leaf, then go to the subtree of child
+        if (node->is_leaf == false)
+            check_for_equal(node->child[i], h, result);
+        
+        // if the node's data is equal to h then push it to results array
+        if (node->key[i]->data == h) {
+            result.push_back(node->key[i]);
+        }
+    }
+ 
+    // subtree of last child
+    if (node->is_leaf == false) {
+        check_for_equal(node->child[i], h, result);
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void BTree::check_for_greater(BTNode* node, long long int h, vector<Node*> & result) {
+    int i;
+
+    for (i = 0; i < node->num_keys; i++) {
+        // If this is not leaf, then go to the subtree of child
+        if (node->is_leaf == false)
+            check_for_greater(node->child[i], h, result);
+
+        // if the node's data is greater than h then push it to results array    
+        if (node->key[i]->data > h) {
+            result.push_back(node->key[i]);
+        }
+    }
+ 
+    // subtree of last child
+    if (node->is_leaf == false) {
+        check_for_greater(node->child[i], h, result);
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void BTree::check_for_smaller(BTNode* node, long long int h, vector<Node*> & result) {
+    int i;
+
+    for (i = 0; i < node->num_keys; i++) {
+        // If this is not leaf, then go to the subtree of child
+        if (node->is_leaf == false)
+            check_for_smaller(node->child[i], h, result);
+
+        // if the node's data is greater than h then push it to results array
+        if (node->key[i]->data < h) {
+            result.push_back(node->key[i]);
+        }
+    }
+ 
+    // subtree of last child
+    if (node->is_leaf == false) {
+        check_for_smaller(node->child[i], h, result);
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+Node* BTree::Insert(long long int data) {
+    Node* new_key = new Node;
+    // CASE 1: the tree is empty
+    if (!root) {                          
+        root         = new BTNode(t);                           // create root node
+        Node* key    = create_node(data, root);
+        root->key[0] = key;                                     // add node to root node
+        root->num_keys++;                                       // add to number of root's key
+        return root->key[0];                                    // return the inserted node
+    }
+    // CASE 2: the root is not empty
+    else {
+        root = root->insertion(data, root, root, new_key);
+        return new_key;                                         // return the inserted node
+    }   
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void BTree::Delete(Node* k) {
+    // CASE 1: the tree is empty
+    if (root == NULL) {
+        return;
+    }
+    // CASE 2: non-empty tree
+    else {
+        // go deletiong from root
+        root->deletion(k);
+    }  
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+Node* BTree::Search(long long int k) {
+    return root->search_node(k);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void BTree::traverse() {
+    root->traverse(0);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
