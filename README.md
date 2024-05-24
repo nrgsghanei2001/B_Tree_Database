@@ -1,4 +1,4 @@
-B-Tree Database
+**B-Tree Database**
 
 This project entails the development of a robust database system employing B-tree data structures. Each field within the database is represented by a B-tree, capable of efficiently storing large volumes of data. The system offers essential functionalities including insertion, deletion, updating, searching, and data selection.
 
