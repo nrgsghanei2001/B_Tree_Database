@@ -1,5 +1,20 @@
-**B-Tree Database**
+# B-Tree Database
 
-This project entails the development of a robust database system employing B-tree data structures. Each field within the database is represented by a B-tree, capable of efficiently storing large volumes of data. The system offers essential functionalities including insertion, deletion, updating, searching, and data selection.
+## Project Overview
 
-The implementation is entirely realized in C++ programming language, ensuring high performance and versatility. To facilitate seamless interaction, regular expressions are employed to translate user commands into database operations. Moreover, the system employs various hashing techniques tailored to different data types, such as strings, numeric values, and dates, optimizing data storage and retrieval processes.
+This project is the final assignment for my Data Structures course, focused on implementing a database system using the B-Tree data structure. The project demonstrates the efficient handling and manipulation of large datasets by the capabilities of B-Trees for various database operations.
+
+## Features
+
+- **B-Tree Implementation:**
+  - Each database field is managed using a B-Tree, allowing efficient storage, retrieval, and management of large data volumes.
+  - Supports key database operations, including insertion, deletion, updating, searching, and data selection.
+
+- **C++ Implementation:**
+  - The entire system is implemented in C++.
+
+- **Command Interface:**
+  - User commands are translated into database operations using regular expressions, enabling intuitive and seamless interaction with the database.
+
+- **Optimized Data Handling:**
+  - The system employs various hashing techniques for specific data types (e.g., strings, numeric values, dates).
